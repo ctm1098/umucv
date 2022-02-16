@@ -21,7 +21,7 @@ h: show/hide help
 
 points = deque([], maxlen = 6)
 
-def fun(event, x, y, flags, param):
+def manejador(event, x, y, flags, param):
     if event == cv.EVENT_LBUTTONDOWN:
         print(x,y)
         points.append((x,y))
@@ -31,7 +31,7 @@ def fun(event, x, y, flags, param):
 
     
 cv.namedWindow("webcam")
-cv.setMouseCallback("webcam", fun)
+cv.setMouseCallback("webcam", manejador)
 
 
 def drawCircle(points, frame):
