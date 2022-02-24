@@ -9,9 +9,9 @@ cv.namedWindow("input")
 cv.moveWindow('input', 0, 0)
 
 parser = argparse.ArgumentParser(description='Graba y guarda archivos de vídeo de 3 segundos con la webcam en caso de que se detecte en la imagen una anomalía que sobrepase un cierto umbral en el ROI seleccionado')
-parser.add_argument('-THRES', metavar='--threshold', type=float, default = 10,
-                    help='La diferencia media umbral entre el ROI original y el ROI en directo que se debe superar para considerar una anomalía en la imagen (por defecto, 10)')
-parser.add_argument('-TIME', metavar='--videoLength', type=float, default = 3,
+parser.add_argument('-thres', metavar='--threshold', type=float, default = 10,
+                    help='La diferencia media umbral de imagen entre entre 2 ROIs que se debe superar para considerar una anomalía en la imagen (por defecto, 10)')
+parser.add_argument('-time', metavar='--videoLength', type=float, default = 3,
                     help='La longitud del vídeo en segundos (por defecto, 3)')
 
 args = parser.parse_args()
@@ -22,32 +22,54 @@ print(variables)
 region = ROI("input")
 captured = False
 prevDim = []
-video = start = 0
+start = video = 0
+
+def startVideo():
+    '''Inicia el proceso de grabacion y devuelve el objeto video y la marca de tiempo de inicio'''
+    print("\nAnomaly detected with "+str(round(diff,2))+" mean difference")
+    video = Video(fps=30, codec="MJPG",ext="avi")
+    video.ON = True
+    return video, time()
+
+def stopVideo(video,t = 0, info = 0):
+    '''Detiene un video y devuelve valores nulos para este y la marca de inicio de grabacion.
+    Puede recibir como argumento adicional el tiempo de grabacion de video'''
+    global start
+    print(str(round(t if t else time()-start, 2)) + " seconds of anomaly recorded")
+    if (info):
+        print(info)
+    video.release()
+    return 0,0
+
+
 for key, frame in autoStream():
     if region.roi:
-        #Recogemos datos del ROI (puntos del rectangulo y region de la imagen)
+        #Recogemos datos del ROI (puntos del rectangulo)
         [x1,y1,x2,y2] = region.roi
         
-        #Si estamos creando un nuevo ROI distinto del anterior...
+        #Si estamos creando un nuevo ROI distinto del anterior ya capturado...
         if (prevDim and [x1,y1,x2,y2] != prevDim and captured):
             captured = False
             #Si estamos grabando un video con un ROI antiguo...
-            if (start != 0):
-                video.release()
+            if (video):
+                video, start = stopVideo(video,info = "A new ROI is beeing created")
 
+        #ROI en directo (se actualiza en cada frame)
+        liveROI = frame[y1:y2+1, x1:x2+1]
 
-        liveROI = frame[y1:y2+1, x1:x2+1]        
-        if key == ord('c'):
+        if key == ord('c') or key == ord('C'):
             #Si se captura, guardamos el estado del ROI en ese instante en staticROI y activamos el flag
             captured = True
+            #ROI estatico (solo guarda la imagen del ROI en el instante de la captura)
             staticROI = frame[y1:y2+1, x1:x2+1]
         
-        if key == ord('x'):
+        if key == ord('x') or key == ord('X'):
             #Si eliminamos el ROI, desactivamos el flag
-            #Si se capturo un ROI previamente, destruimos el resto de ventanas
             region.roi = []
             captured = False
-            video.release()
+            #Si estabamos grabando, detenemos el video
+            if (video):
+                video, start = stopVideo(video, info = "'X' key pressed, stopping capture")
 
         #Dibujamos el ROI en la imagen y sus dimensiones
         cv.rectangle(frame, (x1,y1), (x2,y2), color=(0,255,255), thickness=2)
@@ -55,33 +77,31 @@ for key, frame in autoStream():
         
         
         # Graba siempre un maximo de TIME segundos de anomalia
-        # Si la anomalia dura mas, se cierra el video y empieza uno nuevo
+        # Si la anomalia dura mas, para la grabacion y comienza otra
         if(captured):
+            #Calculo de la diferencia media
             putText(frame, "Watching...", orig=(x1,y2+15))
             imgDiff = cv.absdiff(liveROI,staticROI)
             diff = np.mean(imgDiff)
             #MD = Mean Difference
             putText(frame, "MD =" + str(round(diff,2)), orig=(x1,y2+30))
+
             #Si hay una anomalia...
-            if (diff >= args.THRES):
+            if (diff >= args.thres):
                 putText(frame, "ANOMALY DETECTED", orig=(x1,y2+45))
-                #Si ya se estaba grabando un video (start) y han pasado 3 segundos...
-                if (start and time() - start >= args.TIME):
-                    video.release()
-                    start = 0
+                #Si ya se estaba grabando un video (video != 0) y han pasado 3 segundos...
+                if (video and time() - start >= args.time):
+                    video, start = stopVideo(video,args.time)
                 #Si no se esta grabando (start == 0)
-                if (start == 0):
-                    print("Anomaly detected with "+str(diff)+" mean difference")
-                    video = Video(fps=30, codec="MJPG",ext="avi")
-                    video.ON = True
-                    start = time()
-                
-                video.write(frame)
+                else:
+                    if (video == 0):
+                        video, start = startVideo()
+                    else:
+                        video.write(frame)
             
             #Si no hay anomalias Y hay un video en marcha...
-            elif (start):
-                video.release()
-                start = 0
+            elif (video):
+                video, start = stopVideo(video, info = "Anomaly gone")
                 
         #Guardamos las dimensiones de este ROI para compararlas en el siguiente frame
         prevDim = [x1,y1,x2,y2]
@@ -91,5 +111,6 @@ for key, frame in autoStream():
     cv.imshow('input',frame)
 
 cv.destroyAllWindows()
-video.release()
+if (video):
+    stopVideo(video, info = "Exiting program")
 
