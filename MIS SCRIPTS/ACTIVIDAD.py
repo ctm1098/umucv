@@ -13,8 +13,7 @@ parser.add_argument('-thres', metavar='--threshold', type=float, default = 10,
                     help='La diferencia media umbral de imagen entre entre 2 ROIs que se debe superar para considerar una anomalía en la imagen (por defecto, 10)')
 parser.add_argument('-time', metavar='--videoLength', type=float, default = 3,
                     help='La longitud del vídeo en segundos (por defecto, 3)')
-
-args = parser.parse_args()
+                    
 args = parser.parse_args()
 variables = vars(args)
 print(variables)
