@@ -12,9 +12,9 @@ def readrgb(file):
 
 def calNormHistRGB(img):
     '''Dada una imagen RGB devuelve las frecuencias normalizadas de cada valor de pixel para cada canal de color '''
-    hR,_ = np.histogram(img[:,:,0].flatten(), np.arange(0, 256)) 
-    hG,_ = np.histogram(img[:,:,1].flatten(), np.arange(0, 256))
-    hB,_ = np.histogram(img[:,:,2].flatten(), np.arange(0, 256))
+    hR,_ = np.histogram(img[:,:,0], np.arange(0, 256)) 
+    hG,_ = np.histogram(img[:,:,1], np.arange(0, 256))
+    hB,_ = np.histogram(img[:,:,2], np.arange(0, 256))
     return hR/np.sum(hR), hG/np.sum(hG), hB/np.sum(hB)
 
 parser = argparse.ArgumentParser(description='Clasificación de imagen en base a ROIs como modelos')
@@ -64,24 +64,24 @@ while cont:
         histograms.append((calNormHistRGB(model)))
 
 
-    # Detectar el ROI = seleccionar el modelo mas parecido al ROI
+    # Seleccionar el modelo mas parecido al ROI indicado
     # Tecla espacio
     if key == 32:
         detected.clear()
         piece = original_img[y1:y2+1, x1:x2+1]
         R,G,B = calNormHistRGB(piece)
-        rgbConcat = np.concatenate((R.flatten(),G.flatten(),B.flatten()))
+        rgbConcat = np.concatenate((R,G,B))
 
         mseList = []
         it = 1
         for hR,hG,hB in histograms:
-            histContat = np.concatenate((hR.flatten(),hG.flatten(),hB.flatten()))
+            histContat = np.concatenate((hR,hG,hB))
             mse = mean_squared_error(rgbConcat, histContat)
             mseList.append(mse)
             print("MSE con el modelo " + str(it) +" = " + str(mse))
             it += 1
 
-        detected.append(models[np.argmin(mseList)])
+        detected.append(res_models[np.argmin(mseList)])
 
 
     # Tecla ESC
