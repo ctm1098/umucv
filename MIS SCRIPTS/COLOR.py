@@ -39,9 +39,8 @@ region = ROI("image")
 # original_img se trata de la imagen original a la que no le afecta ningun cambio (p.e, las lineas amarillas de un ROI)
 img = readrgb(args.im)
 original_img = img.copy()
-models = deque(maxlen = 3)
 histograms = deque(maxlen = 3) 
-res_models = deque(maxlen = 3)
+models = deque(maxlen = 3)
 detected = []
 cont = True
 
@@ -55,20 +54,18 @@ while cont:
 
     # Capturar el ROI = guardar el modelo
     if key == ord('c') or key == ord('C'):
-        model = original_img[y1:y2+1, x1:x2+1]
-        # Guardamos el modelo original
+        # Modelos con tamaño ajustado para mostrarlos en pantalla
+        model = cv.resize(original_img[y1:y2+1, x1:x2+1], (333,300))
         models.append(model)
-        # Lista de modelos con tamaño ajustado para mostrarlos en pantalla
-        res_models.append(cv.resize(model, (333,300)))
         # En la lista de histogramas guardamos los histogramas de cada canal de una imagen como una tupla (R,G,B)
         histograms.append((calNormHistRGB(model)))
 
 
     # Seleccionar el modelo mas parecido al ROI indicado
     # Tecla espacio
-    if key == 32:
+    if key == 32 and models:
         detected.clear()
-        piece = original_img[y1:y2+1, x1:x2+1]
+        piece = cv.resize(original_img[y1:y2+1, x1:x2+1], (333,300))
         R,G,B = calNormHistRGB(piece)
         rgbConcat = np.concatenate((R,G,B))
 
@@ -81,7 +78,9 @@ while cont:
             print("MSE con el modelo " + str(it) +" = " + str(mse))
             it += 1
 
-        detected.append(res_models[np.argmin(mseList)])
+        #mseList = [mean_squared_error(np.concatenate((calNormHistRGB(original_img[y1:y2+1, x1:x2+1]))), np.concatenate((hR,hG,hB))) for (hR,hG,hB) in histograms]
+
+        detected.append(models[np.argmin(mseList)])
 
 
     # Tecla ESC
@@ -90,7 +89,7 @@ while cont:
         cont = False
 
     if (models):
-        cv.imshow("models",np.hstack(res_models))
+        cv.imshow("models",np.hstack(models))
 
     cv.imshow("image",img)
 
