@@ -20,6 +20,7 @@ for key, frame in autoStream():
     #binary = logica.astype(np.uint8)*128
     binary = logica.astype(float)
     #print(binary)
+    #Con floats, imshow interpreta que 0 = negro y 1 = blanco
     cv.imshow('binary', binary )
 
 cv.destroyAllWindows()
