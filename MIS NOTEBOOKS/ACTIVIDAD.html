@@ -14154,17 +14154,17 @@ a.anchor-link {
             <span class="c1">#Condicion 2</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">video</span> <span class="ow">and</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">TIME</span><span class="p">):</span>
                 <span class="n">video</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">stopVideo</span><span class="p">(</span><span class="n">video</span><span class="p">,</span><span class="n">TIME</span><span class="p">)</span>
-                <span class="c1">#Si no se esta grabando (start == 0)</span>
+            <span class="c1">#Si no se esta grabando (start == 0)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">video</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">video</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">startVideo</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="n">video</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-                        <span class="n">video</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">startVideo</span><span class="p">()</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">video</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+                    <span class="n">video</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
 
-            <span class="c1">#Si no hay anomalias Y hay un video en marcha...</span>
-            <span class="c1">#Condicion 1</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">video</span><span class="p">):</span>
-                <span class="n">video</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">stopVideo</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="s2">&quot;Anomaly gone&quot;</span><span class="p">)</span>
+        <span class="c1">#Si no hay anomalias Y hay un video en marcha...</span>
+        <span class="c1">#Condicion 1</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">video</span><span class="p">):</span>
+            <span class="n">video</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">stopVideo</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="s2">&quot;Anomaly gone&quot;</span><span class="p">)</span>
 
         <span class="c1"># ...</span>
 </pre></div>
