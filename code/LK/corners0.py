@@ -3,10 +3,10 @@
 # Implementación sencilla del detector de corners
 # basado en la distribución local del gradiente
 
-import cv2 as cv
+import cv2   as cv
 import numpy as np
-from umucv.stream import autoStream
-from umucv.util import putText
+from   umucv.stream import autoStream
+from   umucv.util   import putText
 import time
 
 # suavizdo
@@ -34,6 +34,8 @@ for key, frame in autoStream():
     
     # gradiente    
     gx,gy = grad( gaussian(2, gray) )
+
+    cv.imshow("debug",gy/gy.max())
     
     # los elementos de la matriz de covarianza
     gx2 = gx * gx
@@ -48,7 +50,7 @@ for key, frame in autoStream():
     # valor propio más pequeño en cada pixel, que indica la intensidad de esquina
     lmin = sx2 + sy2 - np.sqrt(sx2**2 + sy2**2 + 4*sxy**2 - 2*sx2*sy2)
     
-    cv.imshow('lambda min',  lmin/lmin.max() )
+    cv.imshow('lambda min',  lmin/lmin.max())
     
     # extraemos los picos de respuesta
     cornermask = nms(lmin, t=0.1)

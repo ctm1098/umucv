@@ -8,7 +8,11 @@ import time
 from umucv.stream import autoStream
 from umucv.util import putText
 
+<<<<<<< HEAD
 sift = cv.SIFT_create(nfeatures=500)
+=======
+sift = cv.SIFT_create(nfeatures=700, contrastThreshold=0.1, edgeThreshold=8)
+>>>>>>> ef11ddbef1e2a031172d375c8206396d2c4d5df7
 
 matcher = cv.BFMatcher()
 

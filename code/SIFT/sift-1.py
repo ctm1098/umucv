@@ -8,7 +8,11 @@ import time
 from umucv.stream import autoStream
 from umucv.util import putText
 
+<<<<<<< HEAD
 sift = cv.SIFT_create(nfeatures=500)
+=======
+sift = cv.xfeatures2d.SIFT_create(nfeatures=700)
+>>>>>>> ef11ddbef1e2a031172d375c8206396d2c4d5df7
 
 # añadimos un algoritmo para encontrar asociaciones por fuerza bruta :(
 matcher = cv.BFMatcher()
