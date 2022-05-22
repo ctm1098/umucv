@@ -81,7 +81,7 @@ for key,frame in autoStream():
         cv.drawContours(mask, [mouth], todos, on, relleno)
 
         # Me dibujo la cara de color carne pero hay una particion entre frente y el resto de la cara que no se por que sucede
-        cv.drawContours(frame, [np.array([(x,y) for [x,y,z] in L if z in range(0,27)])], todos, (111,144,249), relleno)
+        # cv.drawContours(frame, [np.array([(x,y) for [x,y,z] in L if z in range(0,27)])], todos, (111,144,249), relleno)
 
         cv.imshow('mask',mask*255)
 
