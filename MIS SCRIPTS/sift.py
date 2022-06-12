@@ -27,6 +27,12 @@ args = parser.parse_args()
 
 # Ancho y alto del frame (el mismo para los modelos)
 W,H = (int(args.resize.split('x')[0]), int(args.resize.split('x')[1]))
+
+if W <= 0 or H <= 0:
+    print('Error with -resize argument')
+    print('Frame dimensions must be positive integers')
+    exit()
+
 # Ancho y alto del mini-modelo que solaparemos en el frame original cuando se detecte
 modelW,modelH = (floor(W/4.18), floor(H/3.42))
 # Offsets para el mini-modelo para solaparlo en el frame
@@ -46,9 +52,8 @@ files = glob(args.p)
 for f in files:
     name = f.split('\\')[-1].split('.')[0].replace('_',' ')
     model = cv.resize(cv.imread(f),(W,H))
-    kpts, descs = sift.detectAndCompute(model,None)
+    kpts, descs = sift.detectAndCompute(model,mask=None)
     models.append((name,model,kpts,descs))
-
 
 while True:
     frame = cam.frame.copy()
@@ -62,8 +67,8 @@ while True:
         models.clear()
 
     if key in [ord('c'), ord('C')]:
-        model = frame
-        kpts, descs = sift.detectAndCompute(model,None)
+        model = frame.copy()
+        kpts, descs = sift.detectAndCompute(model,mask=None)
         models.append(("Model_{}".format(idx),model,kpts,descs))
         idx+=1
         print("Added model {}".format(idx))
@@ -94,135 +99,21 @@ while True:
                 bestModel = (name,model)
                 max = percent
         
-        detected = True
-        
         if (percent > args.thres):
             (name,model) = bestModel
             modelDetected = cv.resize(model.copy(), (modelW,modelW))
             best_name = name
-            
 
-    if detected:
         putText(frame, f'{len(frame_kpts)} pts')
         fillborders(frame,modelDetected,x_offset,y_offset,col = (192,192,192))
         frame[y_offset:y_offset+modelDetected.shape[0], x_offset:x_offset+modelDetected.shape[1]] = modelDetected
         putText(frame, f'{percent:.2f}% likelihood', orig = (x_offset,y_offset+modelDetected.shape[0]+30))
         putText(frame, f'{best_name}', orig = (x_offset,y_offset+modelDetected.shape[0]+60))
 
-    flag = cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+    #flag = cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
     #cv.drawKeypoints(frame, frame_kpts, frame, color=(100,150,255), flags=flag)
     cv.imshow('camera',frame)
 
 cam.stop()
 cv.destroyAllWindows()
-
-
-
-
-'''
-import cv2 as cv
-import numpy as np
-import time
-import argparse
-from threading import Thread, Lock
-from umucv.stream import Camera, autoStream
-from umucv.util import putText
-
-LOCK = Lock()
-
-detected = False
-frame = imgDetectada = x_offset = y_offset = 0
-key = [0]
-
-def record():
-    global frame
-    global imgDetectada
-    global detected
-    global x_offset
-    global y_offset
-
-    LOCK.acquire()
-    for key2, frame in autoStream():
-        key[0] = key2
-        LOCK.release()
-        if key[0] == 27: 
-            break;
-        
-        LOCK.acquire()
-        if detected:
-            frame[y_offset:y_offset+imgDetectada.shape[0], x_offset:x_offset+imgDetectada.shape[1]] = imgDetectada
-        LOCK.release()
-
-        cv.imshow("SIFT",frame)
-
-        LOCK.acquire()
-
-        time.sleep(0.08)
-
-
-#cam = Camera(debug=False)
-
-models = []
-sift = cv.AKAZE_create()
-match = cv.BFMatcher()
-
-t = Thread(target=record, args=())
-t.start()
-while True:
-
-    max = 0
-
-    LOCK.acquire()
-    if key[0] == 27: 
-        LOCK.release()
-        break
-
-    if key[0] == ord('x'):
-        models.clear()
-        detected = False
-
-    if key[0] in [ord('c'), ord('C')]:
-        models.append(frame)
-        print("Modelo añadido")
-        
-    LOCK.release()
-    if models:
-            
-        frame_kpts, frame_descs = sift.detectAndCompute(frame, mask=None)
-        putText(frame, f'{len(frame_kpts)} pts')
-
-        for model in models:
-            pts = []
-            
-            for s in models:
-                pts = []
-                model_kpts, model_descs = sift.detectAndCompute(s,None)
-                matches = match.knnMatch(frame_descs,model_descs,k=2)
-                
-                for m in matches:
-                    if len(m) >= 2:
-                        best,second = m
-                        if best.distance < 0.75*second.distance:
-                            pts.append(best)
-                percent = 100*len(pts)/len(model_descs)
-
-                LOCK.acquire()
-                if (percent > max):
-                    max = percent
-                    imgDetectada = s
-                    x_offset=0
-                    y_offset=30
-                if (percent > 7):
-                    print("el % que mas se acerca es: ", percent)
-                    #cv.imshow("imagen con mas semejanza", imgDetectada)
-                    imgDetectada = cv.resize(imgDetectada, (153,140))
-                    detected = True
-                else:
-                    imgDetectada = cv.resize(np.zeros((500,500,3),dtype = "uint8"), (153,140))
-                    detected = True
-                LOCK.release()
-
-cv.destroyAllWindows()
-
-'''
 
