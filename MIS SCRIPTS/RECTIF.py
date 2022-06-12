@@ -5,7 +5,12 @@ import argparse
 from umucv.util import putText
 import matplotlib.pyplot as plt
 
-SIZE = (640,480)
+#Dimensiones de la tarjeta = 8.5 x 5.4 cm
+
+
+SIZE = (900,880)
+H = 5.4
+W = 8.5
 
 pts = deque(maxlen = 2)
 
@@ -16,16 +21,6 @@ def shcont(c, color='blue', nodes=True):
     y = np.append(y,y[0])
     plt.plot(x,y,color)
     if nodes: plt.plot(x,y,'.',color=color, markersize=11)
-
-def drawDistances(points,frame,factor):
-    l = list(points)
-    for (p1,p2) in zip(l,l[1:]):
-        cv.line(frame,p1,p2,(0,255,0))
-        x1,y1 = p1
-        x2,y2 = p2
-        dist = round((abs(x2**2-x1**2) + abs(y2**2-y1**2))**0.5,2) * factor #Redondeamos a 2 decimales
-        mid = ((x1+x2)//2, (y1+y2)//2)
-        putText(frame,str(dist)+' pixels',mid)
 
 def drawCircle(points, frame):
     for p in points:
@@ -39,61 +34,67 @@ def manejador(event, x, y, flags, param):
         pts.clear()
         print("CLEARED")
 
-'''parser = argparse.ArgumentParser(description='ectifica la imagen de un plano para medir distancias tomando manualmente referencias conocidas')
-parser.add_argument('-in', metavar='--inputFile', type=str, required = True, help='Path al fichero con los datos de entrada')
-parser.add_argument('-resize',  metavar='--resizeFrame', type = str, required = False, default = SIZE, help='Ancho y alto de la imagen')
-args = parser.parse_args()'''
+def getInfo(path):
+    f = open(path)
+    lines = [l.split(":")[1].strip() for l in f.readlines()]
+    f.close()
+    imFile = lines[0]
+    size = (float(lines[1].split('x')[0]), float(lines[1].split('x')[1]))
+    refP = [float(p) for p in lines[2].split(' ')]
+    realP = [float(p) for p in lines[3].split(' ')]
+    #factor
+    distP = (abs(refP[0]**2-refP[2]**2) + abs(refP[1]**2-refP[3]**2))**0.5
+    factor = size[1]/distP
+    return imFile,refP,realP,factor
+
+parser = argparse.ArgumentParser(description='Rectifica la imagen de un plano para medir distancias tomando manualmente referencias conocidas')
+parser.add_argument('-fin', metavar='--inputFile', type=str, required = True, help='Path al fichero con los datos de entrada')
+args = parser.parse_args()
+
+cv.namedWindow("original")
+cv.namedWindow("rectif")
+cv.setMouseCallback("original", manejador)
 
 
-cv.namedWindow("image")
-cv.setMouseCallback("image", manejador)
-
-#W,H = (int(args.resize.split('x')[0]), int(args.resize.split('x')[1]))
-im = cv.imread('objetos3.jpg')
-
+imFile,refP,realP,factor = getInfo(args.fin)
+imOriginal = cv.imread(imFile)
 fig = plt.figure(figsize=(6,8))
-#plt.imshow(im)
-
+plt.imshow(imOriginal)
+fig.show()
 
 ref = np.array([
-        [694,857],
-        [787,921],
-        [926,868],
-        [830,813]])
-
-distX = (abs(787**2-921**2) + abs(926**2-868**2))**0.5
-distY = (abs(694**2-787**2) + abs(857**2-921**2))**0.5
-prop = distX/distY
+        [refP[0],refP[1]],
+        [refP[2],refP[3]],
+        [refP[4],refP[5]],
+        [refP[6],refP[7]]])
 
 real = np.array([
-    [500,500],
-    [500,560],
-    [594.4,560],
-    [594.4,500]])
+        [realP[0],realP[1]],
+        [realP[2],realP[3]],
+        [realP[4],realP[5]],
+        [realP[6],realP[7]]])
 
 nuevo,x = cv.findHomography(ref, real)
-rec = cv.warpPerspective(im, nuevo, (900,880))
+rec = cv.warpPerspective(imOriginal, nuevo, SIZE)
 
 shcont(ref,color='red')
 
-plt.imshow(im)
-fig.show()
-
 while True:
 
-    recC = rec.copy()
+    im = imOriginal.copy()
 
     for p in pts:
-        cv.circle(recC, p, 3, (0,0,255), -1)
+        cv.circle(im, p, 3, (0,0,255), -1)
     if len(pts) == 2:
         x1,y1 = pts[0]
         x2,y2 = pts[1]
         mid = ((x1+x2)//2, (y1+y2)//2)
-        cv.line(recC, pts[0], pts[1], (0,255,0))
-        dist = np.linalg.norm( np.array(pts[0]) - pts[1]) * 0.09
-        putText(recC,str(dist)+' cm',mid)
+        cv.line(im, pts[0], pts[1], (0,255,0))
+        distP = round((abs(x2**2-x1**2) + abs(y2**2-y1**2))**0.5,2)
+        putText(im,'{} cm'.format(distP*factor),mid)
 
-    cv.imshow("image", recC)
+    cv.imshow("original", im)
+    cv.imshow("rectif", rec)
 
     key = cv.waitKey(1)
     if key == 27:
